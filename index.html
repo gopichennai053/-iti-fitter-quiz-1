@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="ta">
+<head>
+<meta charset="UTF-8">
+<title>ITI Fitter Quiz App</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', sans-serif;
+    background: linear-gradient(135deg, #1f4037 0%, #99f2c8 100%);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .card {
+    background: #fff;
+    border-radius: 20px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    width: 100%;
+    max-width: 480px;
+    padding: 28px;
+    text-align: center;
+  }
+  h1 {
+    color: #1f4037;
+    margin-bottom: 6px;
+    font-size: 24px;
+  }
+  .subtitle {
+    color: #777;
+    font-size: 13px;
+    margin-bottom: 22px;
+  }
+  .chapter-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-height: 65vh;
+    overflow-y: auto;
+  }
+  .chapter-btn {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 16px;
+    border: 2px solid #e2e2e2;
+    border-radius: 12px;
+    background: #f7fbf9;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.2s ease;
+  }
+  .chapter-btn:hover {
+    border-color: #1f8a5f;
+    background: #eafaf1;
+  }
+  .chapter-name {
+    font-weight: 600;
+    color: #222;
+    font-size: 15px;
+  }
+  .chapter-count {
+    font-size: 12px;
+    color: #888;
+  }
+  .chapter-score {
+    font-size: 12px;
+    color: #1f8a5f;
+    font-weight: 700;
+  }
+  .back-btn {
+    display: inline-block;
+    margin-bottom: 15px;
+    color: #1f8a5f;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 14px;
+    float: left;
+  }
+  .topbar {
+    display: flex;
+    justify-content: space-between;
+    margin: 15px 0 20px;
+    font-weight: 600;
+    color: #555;
+    font-size: 13px;
+    clear: both;
+  }
+  .timer { color: #e63946; }
+  .progress-bar {
+    height: 8px;
+    background: #eee;
+    border-radius: 5px;
+    overflow: hidden;
+    margin-bottom: 22px;
+  }
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #1f4037, #99f2c8);
+    transition: width 0.3s ease;
+  }
+  .question {
+    font-size: 17px;
+    font-weight: 600;
+    color: #222;
+    margin-bottom: 22px;
+    min-height: 55px;
+    text-align: left;
+  }
+  .options {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .option {
+    padding: 13px;
+    border: 2px solid #ddd;
+    border-radius: 12px;
+    background: #f9f9fb;
+    cursor: pointer;
+    font-size: 14px;
+    text-align: left;
+    transition: all 0.2s ease;
+  }
+  .option:hover { border-color: #1f8a5f; background: #eafaf1; }
+  .option.correct { background: #d4f8d4; border-color: #2ecc71; }
+  .option.wrong { background: #ffd6d6; border-color: #e63946; }
+  .option.disabled { pointer-events: none; }
+  .feedback {
+    margin-top: 14px;
+    font-weight: 600;
+    min-height: 20px;
+    font-size: 13px;
+  }
+  .btn {
+    margin-top: 18px;
+    padding: 12px 28px;
+    border: none;
+    border-radius: 30px;
+    background: linear-gradient(90deg, #1f4037, #1f8a5f);
+    color: #fff;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .btn.secondary {
+    background: #eee;
+    color: #333;
+    margin-left: 8px;
+  }
+  .btn:hover { opacity: 0.9; }
+  .result-emoji { font-size: 55px; margin-bottom: 8px; }
+  .result-score { font-size: 26px; font-weight: 700; color: #1f4037; margin-bottom: 5px; }
+  .result-msg { color: #666; margin-bottom: 6px; font-size: 14px; }
+  .hidden { display: none; }
+</style>
+</head>
+<body>
+
+<div class="card" id="card">
+
+  <div id="homeScreen">
+    <h1>🔧 ITI ஃபிட்டர் வினாடி வினா</h1>
+    <div class="subtitle">அத்தியாயம் தேர்ந்தெடுத்து பயிற்சி செய்யுங்கள்</div>
+    <div class="chapter-list" id="chapterList"></div>
+  </div>
+
+  <div id="quizScreen" class="hidden">
+    <span class="back-btn" onclick="goHome()">⬅ பின்செல்</span>
+    <div class="topbar">
+      <span id="qCounter">கேள்வி 1/6</span>
+      <span class="timer" id="timer">⏱ 20</span>
+    </div>
+    <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+    <div class="question" id="questionText"></div>
+    <div class="options" id="optionsContainer"></div>
+    <div class="feedback" id="feedback"></div>
+  </div>
+
+  <div id="resultScreen" class="hidden">
+    <div class="result-emoji" id="resultEmoji">🎉</div>
+    <div class="result-score" id="resultScore"></div>
+    <div class="result-msg" id="resultMsg"></div>
+    <button class="btn" onclick="restartChapter()">மீண்டும் முயற்சி</button>
+    <button class="btn secondary" onclick="goHome()">அத்தியாயங்கள்</button>
+  </div>
+
+</div>
+
+<script>
+const chapters = [
+  {
+    name: "1. பாதுகாப்பு (Safety)",
+    questions: [
+      { q: "பணிமனையில் கண்களை பாதுகாக்க பயன்படுத்தும் கருவி?", options: ["கையுறை", "பாதுகாப்பு கண்ணாடி (Goggles)", "ஏப்ரன்", "ஹெல்மெட்"], answer: 1 },
+      { q: "தீ விபத்தை அணைக்க பயன்படும் கருவி எது?", options: ["ஸ்பேனர்", "Fire Extinguisher", "ஹேமர்", "சானா"], answer: 1 },
+      { q: "மின்சார விபத்தில் இருந்து பாதுகாக்க அணியும் காலணி?", options: ["Rubber Sole Shoes", "செருப்பு", "வெறும் காலுடன்", "Sandals"], answer: 0 },
+      { q: "பணிமனையில் முதலுதவி பெட்டி (First Aid Box) இருக்க வேண்டியது ஏன்?", options: ["அலங்காரத்திற்கு", "உடனடி காயத்திற்கு சிகிச்சை அளிக்க", "கருவி வைக்க", "தேவை இல்லை"], answer: 1 },
+      { q: "Personal Protective Equipment (PPE) இதில் அடங்காதது எது?", options: ["Helmet", "Goggles", "Mobile Phone", "Gloves"], answer: 2 },
+      { q: "தீ ஏற்படுவதற்கான முக்கிய மூன்று காரணிகள் (Fire Triangle) எது?", options: ["நீர், காற்று, மண்", "எரிபொருள், வெப்பம், ஆக்ஸிஜன்", "இரும்பு, தாமிரம், ஈயம்", "மின்சாரம், நீர், காற்று"], answer: 1 },
+      { q: "Class A தீ என்பது எந்த வகை பொருட்களால் ஏற்படுவது?", options: ["திண்ம பொருட்கள் (Wood, Paper)", "எண்ணெய் மற்றும் திரவங்கள்", "மின்சாரம்", "வாயுக்கள்"], answer: 0 },
+      { q: "Class C தீ ஏற்படுவது எதனால்?", options: ["மின்சார உபகரணங்கள்", "மரம்", "காகிதம்", "எண்ணெய்"], answer: 0 },
+      { q: "Safety Shoes அணிவதன் முக்கிய நோக்கம்?", options: ["கால்களை பாரமான பொருட்கள் விழுவதில் இருந்து பாதுகாக்க", "அழகுக்காக", "வேகமாக நடக்க", "எடை குறைக்க"], answer: 0 },
+      { q: "Apron அணிவதன் நோக்கம்?", options: ["உடையை பாதுகாக்க மற்றும் தீப்பொறியில் இருந்து காக்க", "வெப்பமூட்ட", "அழகுக்காக", "எடை கூட்ட"], answer: 0 },
+      { q: "Accident என்பது என்ன?", options: ["திட்டமிடாமல் திடீரென நடக்கும் நிகழ்வு, சேதம்/காயம் விளைவிக்கும்", "திட்டமிட்ட வேலை", "பயிற்சி", "ஓய்வு நேரம்"], answer: 0 },
+      { q: "Hazard என்பது என்ன?", options: ["ஆபத்தை ஏற்படுத்தக்கூடிய ஒரு காரணி/சூழ்நிலை", "பாதுகாப்பான இடம்", "ஓய்வு", "கருவி பெட்டி"], answer: 0 },
+      { q: "Ear Muffs / Ear Plugs பயன்படுத்தப்படுவது?", options: ["அதிக சத்தத்தில் இருந்து காதுகளை பாதுகாக்க", "குளிரில் இருந்து காக்க", "அழகுக்காக", "எடை குறைக்க"], answer: 0 },
+      { q: "Dust Mask பயன்படுத்தப்படுவது?", options: ["தூசி மற்றும் புகையில் இருந்து மூச்சுப்பாதையை காக்க", "குரலை மாற்ற", "அழகுக்காக", "வெப்பம் தடுக்க"], answer: 0 },
+      { q: "பணிமனையில் நீண்ட முடி மற்றும் தளர்வான ஆடைகள் ஆபத்தானது ஏன்?", options: ["இயங்கும் இயந்திரங்களில் சிக்கிக்கொள்ளக்கூடும்", "வெப்பமாக இருக்கும்", "அழகாக இருக்காது", "விலை அதிகம்"], answer: 0 },
+      { q: "First Aid இன் முதல் நோக்கம்?", options: ["காயம் மோசமடையாமல் உடனடி சிகிச்சை அளித்தல்", "மருத்துவமனைக்கு அனுப்புவது", "வேலையை நிறுத்துவது", "எதுவும் செய்யாமல் இருப்பது"], answer: 0 },
+      { q: "Exhaust Fan பணிமனையில் இருப்பதன் நோக்கம்?", options: ["புகை மற்றும் தூசியை வெளியேற்ற", "வெப்பமூட்ட", "சத்தம் குறைக்க", "நிறம் மாற்ற"], answer: 0 },
+      { q: "Warning Sign Board களின் நோக்கம்?", options: ["ஆபத்தை முன்கூட்டியே தெரிவிக்க", "அலங்காரத்திற்கு", "வழி காட்ட", "விலை காட்ட"], answer: 0 },
+      { q: "Grinding Machine பயன்படுத்தும்போது அணிய வேண்டியது?", options: ["Face Shield / Goggles", "Sandals", "Woolen Gloves", "எதுவும் தேவை இல்லை"], answer: 0 },
+      { q: "Electric Shock ஏற்படாமல் இருக்க எடுக்க வேண்டிய முன்னெச்சரிக்கை?", options: ["ஈரமான கைகளுடன் மின் கருவிகளை தொடக்கூடாது", "எப்போதும் தொட்டுக்கொண்டே இருக்கலாம்", "மின்சாரம் தேவை இல்லை", "கவனிக்க தேவை இல்லை"], answer: 0 },
+      { q: "Housekeeping (பணிமனை சுத்தம்) முக்கியம் ஏன்?", options: ["விபத்துகளை தடுக்க மற்றும் வேலை திறனை அதிகரிக்க", "அழகுக்காக மட்டும்", "நேரத்தை வீணாக்க", "தேவை இல்லை"], answer: 0 }
+    ]
+  },
+  {
+    name: "2. கை கருவிகள் (Hand Tools)",
+    questions: [
+      { q: "உலோகத்தை வெட்ட பயன்படும் கை கருவி எது?", options: ["ஹேக்சா (Hacksaw)", "ஸ்பேனர்", "ஸ்க்ரூ டிரைவர்", "பிளையர்"], answer: 0 },
+      { q: "Chisel (உளி) பயன்படுத்தப்படும் வேலை?", options: ["அளவிட", "உலோகத்தை வெட்ட/சீவ", "துளையிட", "பூட்ட"], answer: 1 },
+      { q: "Flat File (தட்டையான உரம்பு) பயன்படுத்தப்படுவது?", options: ["மேற்பரப்பை மெருகேற்ற", "நிறம் தீட்ட", "கம்பியை வளைக்க", "எடை அளக்க"], answer: 0 },
+      { q: "Try Square பயன்படுத்தப்படுவது?", options: ["வெப்பநிலை அளக்க", "90° கோணத்தை சரிபார்க்க", "வேகத்தை அளக்க", "எடை அளக்க"], answer: 1 },
+      { q: "Ball Peen Hammer முதன்மையாக பயன்படுவது?", options: ["ரிவெட்டிங் மற்றும் அடிக்கும் வேலை", "வெட்டும் வேலை", "அளவிடும் வேலை", "துளையிடும் வேலை"], answer: 0 },
+      { q: "Screw Driver பயன்படுத்தப்படுவது?", options: ["Screw ஐ இறுக்க/தளர்த்த", "உலோகத்தை வெட்ட", "துளையிட", "அளவிட"], answer: 0 },
+      { q: "Combination Plier பயன்படுத்தப்படுவது?", options: ["பிடித்தல், வெட்டுதல், வளைத்தல் ஆகிய வேலைகளுக்கு", "அளவிட மட்டும்", "வெப்பம் அளக்க", "நிறம் தீட்ட"], answer: 0 },
+      { q: "Adjustable Spanner இன் சிறப்பு அம்சம்?", options: ["வெவ்வேறு அளவு Nut/Bolt க்கு பயன்படும்", "ஒரே அளவுக்கு மட்டும்", "வெட்ட மட்டும்", "துளையிட மட்டும்"], answer: 0 },
+      { q: "Cold Chisel தயாரிக்கப்படுவது?", options: ["High Carbon Steel", "Rubber", "Wood", "Aluminium"], answer: 0 },
+      { q: "Half Round File பயன்படுத்தப்படுவது?", options: ["வளைவான மேற்பரப்புகளை மெருகேற்ற", "தட்டையான மேற்பரப்புக்கு மட்டும்", "வெட்ட", "துளையிட"], answer: 0 },
+      { q: "Center Punch பயன்படுத்தப்படுவது?", options: ["துளையிடும் இடத்தை குறிக்க", "வெட்ட", "அளவிட", "பூட்ட"], answer: 0 },
+      { q: "Allen Key பயன்படுத்தப்படுவது?", options: ["Hexagonal Socket Screw ஐ திருக்க", "வெட்ட", "அளவிட", "துளையிட"], answer: 0 },
+      { q: "Wire Brush பயன்படுத்தப்படுவது?", options: ["துரு மற்றும் அழுக்கை நீக்க", "வெட்ட", "அளவிட", "வளைக்க"], answer: 0 },
+      { q: "Hand Vice இன் பயன்?", options: ["சிறிய பொருட்களை பிடித்து வேலை செய்ய", "வெட்ட", "அளவிட", "தூக்க"], answer: 0 },
+      { q: "Scriber பயன்படுத்தப்படுவது?", options: ["உலோகத்தில் கோடு வரைய", "வெட்ட", "துளையிட", "அளவிட"], answer: 0 },
+      { q: "Round File பயன்படுத்தப்படுவது?", options: ["வட்ட வடிவ துளைகளை மெருகேற்ற", "தட்டையான மேற்பரப்பு", "வெட்ட", "அளவிட"], answer: 0 },
+      { q: "Pipe Wrench பயன்படுத்தப்படுவது?", options: ["குழாய்களை பிடித்து திருக்க", "தகடு வெட்ட", "அளவிட", "துளையிட"], answer: 0 },
+      { q: "Bench Vice பொருத்தப்பட்டிருப்பது?", options: ["Work Bench மேல்", "தரையில்", "சுவரில்", "இயந்திரத்தில்"], answer: 0 },
+      { q: "Hacksaw Blade இல் உள்ள பற்கள் (Teeth) எண்ணிக்கை எதை பொறுத்து தேர்வு செய்யப்படுகிறது?", options: ["வெட்டப்படும் உலோகத்தின் தடிமன்/வகை", "நிறம்", "விலை", "எடை"], answer: 0 },
+      { q: "Surface Plate பயன்படுத்தப்படுவது?", options: ["துல்லியமான தட்டையான மேற்பரப்பை பரிசோதிக்க", "வெட்ட", "துளையிட", "வெப்பமூட்ட"], answer: 0 },
+      { q: "Punch வகைகளில் Prick Punch இன் கோணம்?", options: ["30°", "60°", "90°", "120°"], answer: 0 },
+      { q: "Cape Chisel பயன்படுத்தப்படுவது?", options: ["குறுகிய Keyway/Groove வெட்ட", "தட்டையான வெட்டு", "அளவிட", "துளையிட"], answer: 0 },
+      { q: "Circlip Plier பயன்படுத்தப்படுவது?", options: ["Circlip ஐ பிடித்து அகற்ற/பொருத்த", "வெட்ட", "அளவிட", "வளைக்க"], answer: 0 },
+      { q: "Tin Snips பயன்படுத்தப்படுவது?", options: ["மெல்லிய தகடுகளை வெட்ட", "தடிமனான இரும்பை வெட்ட", "அளவிட", "துளையிட"], answer: 0 },
+      { q: "Box Spanner பயன்படுத்தப்படுவது?", options: ["ஆழமான இடத்தில் உள்ள Nut/Bolt ஐ திருக்க", "தகடு வெட்ட", "அளவிட", "வளைக்க"], answer: 0 }
+    ]
+  },
+  {
+    name: "3. அளவீட்டு கருவிகள் (Measuring Instruments)",
+    questions: [
+      { q: "Vernier Caliper இன் Least Count பொதுவாக?", options: ["0.02 mm", "1 mm", "1 cm", "10 mm"], answer: 0 },
+      { q: "Micrometer பயன்படுத்தப்படுவது?", options: ["துல்லியமான அளவை அளக்க", "எடை அளக்க", "வெப்பநிலை அளக்க", "நேரத்தை அளக்க"], answer: 0 },
+      { q: "Steel Rule பயன்படுத்தி அளக்கக்கூடிய குறைந்தபட்ச அளவு?", options: ["0.5 mm", "1 mm", "0.01 mm", "5 mm"], answer: 1 },
+      { q: "Vernier Height Gauge பயன்படுத்தப்படுவது?", options: ["உயரத்தை அளக்க மற்றும் மார்க் செய்ய", "எடை அளக்க", "கோணம் அளக்க மட்டும்", "வேகம் அளக்க"], answer: 0 },
+      { q: "Try Square இல் உள்ள கோணம் எவ்வளவு?", options: ["45°", "60°", "90°", "120°"], answer: 2 },
+      { q: "Micrometer இன் Least Count பொதுவாக?", options: ["0.01 mm", "0.1 mm", "1 mm", "0.5 mm"], answer: 0 },
+      { q: "Vernier Caliper மூலம் அளக்க முடியாதது எது?", options: ["வெளிப்புற அளவு", "உட்புற அளவு", "ஆழம்", "வெப்பநிலை"], answer: 3 },
+      { q: "Dial Gauge பயன்படுத்தப்படுவது?", options: ["மிகச்சிறிய அளவு வேறுபாட்டை அளக்க", "எடை அளக்க", "வெப்பநிலை அளக்க", "நேரம் அளக்க"], answer: 0 },
+      { q: "Feeler Gauge பயன்படுத்தப்படுவது?", options: ["இரண்டு பாகங்களுக்கு இடையேயான சிறிய இடைவெளியை அளக்க", "நீளம் அளக்க", "எடை அளக்க", "வேகம் அளக்க"], answer: 0 },
+      { q: "Combination Set இல் அடங்காத பாகம்?", options: ["Protractor Head", "Center Head", "Square Head", "Hammer"], answer: 3 },
+      { q: "Slip Gauge பயன்படுத்தப்படுவது?", options: ["மிக துல்லியமான அளவை நிர்ணயிக்க", "வெட்ட", "வளைக்க", "பூட்ட"], answer: 0 },
+      { q: "Outside Caliper பயன்படுத்தப்படுவது?", options: ["வெளிப்புற விட்டத்தை அளக்க", "உட்புற விட்டத்தை அளக்க", "ஆழம் அளக்க", "கோணம் அளக்க"], answer: 0 },
+      { q: "Inside Caliper பயன்படுத்தப்படுவது?", options: ["உட்புற விட்டத்தை அளக்க", "வெளிப்புற விட்டத்தை அளக்க", "எடை அளக்க", "வெப்பம் அளக்க"], answer: 0 },
+      { q: "Depth Gauge பயன்படுத்தப்படுவது?", options: ["துளை/Slot இன் ஆழத்தை அளக்க", "நீளம் அளக்க", "அகலம் அளக்க", "எடை அளக்க"], answer: 0 },
+      { q: "Bevel Protractor பயன்படுத்தப்படுவது?", options: ["எந்த கோணத்தையும் அளக்க", "நீளம் அளக்க மட்டும்", "எடை அளக்க", "வேகம் அளக்க"], answer: 0 },
+      { q: "Screw Pitch Gauge பயன்படுத்தப்படுவது?", options: ["Thread இன் Pitch ஐ கண்டறிய", "நீளம் அளக்க", "எடை அளக்க", "கோணம் அளக்க"], answer: 0 },
+      { q: "Vernier Caliper இல் Main Scale மற்றும் Vernier Scale இடையேயான வித்தியாசம் என்ன அளிக்கிறது?", options: ["Least Count", "Zero Error மட்டும்", "எடை", "வேகம்"], answer: 0 },
+      { q: "Plug Gauge பயன்படுத்தப்படுவது?", options: ["துளையின் அளவை சரிபார்க்க", "வெளிப்புற அளவை அளக்க", "எடை அளக்க", "வேகம் அளக்க"], answer: 0 },
+      { q: "Snap Gauge பயன்படுத்தப்படுவது?", options: ["Shaft இன் வெளிப்புற அளவை விரைவாக சரிபார்க்க", "துளையின் ஆழம் அளக்க", "எடை அளக்க", "நேரம் அளக்க"], answer: 0 },
+      { q: "Radius Gauge பயன்படுத்தப்படுவது?", options: ["வளைவுகளின் ஆரத்தை அளக்க", "நீளம் அளக்க", "எடை அளக்க", "கோணம் அளக்க"], answer: 0 },
+      { q: "Digital Caliper இன் நன்மை?", options: ["எளிதாக மற்றும் துல்லியமாக அளவை Display செய்யும்", "விலை மலிவு", "பயன்பாடு கடினம்", "எடை அதிகம்"], answer: 0 },
+      { q: "Micrometer இல் Thimble ஒரு முறை சுற்றினால் Spindle நகரும் தூரம்?", options: ["0.5 mm", "1 mm", "5 mm", "10 mm"], answer: 0 },
+      { q: "Steel Rule தயாரிக்கப்படும் பொருள்?", options: ["Stainless Steel", "Wood", "Plastic", "Rubber"], answer: 0 },
+      { q: "Gauge Block (Slip Gauge) களை சேர்த்து பயன்படுத்தும் முறை?", options: ["Wringing", "Welding", "Soldering", "Riveting"], answer: 0 },
+      { q: "Vernier Bevel Protractor இன் Least Count பொதுவாக?", options: ["5 minutes", "1 mm", "0.02 mm", "1 degree"], answer: 0 }
+    ]
+  },
+  {
+    name: "4. ட்ரில்லிங் (Drilling)",
+    questions: [
+      { q: "துளையிட பயன்படும் இயந்திரம்?", options: ["Lathe Machine", "Drilling Machine", "Welding Machine", "Grinding Machine"], answer: 1 },
+      { q: "Drill Bit இன் கோணம் (Point Angle) பொதுவாக?", options: ["90°", "118°", "180°", "45°"], answer: 1 },
+      { q: "Twist Drill தயாரிக்கப்படும் பொருள்?", options: ["High Speed Steel (HSS)", "Rubber", "Wood", "Plastic"], answer: 0 },
+      { q: "துளையிடும் முன் Center Punch பயன்படுத்துவது ஏன்?", options: ["Drill Bit சறுக்காமல் இருக்க", "நிறம் தீட்ட", "வெப்பம் குறைக்க", "எடை குறைக்க"], answer: 0 },
+      { q: "Reaming செய்வதன் நோக்கம்?", options: ["துளையின் அளவை துல்லியமாக்க", "துளையை மூட", "வெட்ட", "வளைக்க"], answer: 0 },
+      { q: "Countersinking செய்யப்படுவது எதற்காக?", options: ["Screw Head ஐ மறைக்க", "எடை கூட்ட", "நிறம் தீட்ட", "வெப்பமூட்ட"], answer: 0 },
+      { q: "Counterboring செய்வதன் நோக்கம்?", options: ["Bolt Head க்கு தட்டையான இருக்கை உருவாக்க", "துளையை மூட", "வெட்ட", "வளைக்க"], answer: 0 },
+      { q: "Drill Chuck பயன்படுத்தப்படுவது?", options: ["Drill Bit ஐ பிடிக்க", "Work Piece ஐ பிடிக்க", "வேகத்தை மாற்ற", "எண்ணெய் இட"], answer: 0 },
+      { q: "Twist Drill இல் உள்ள Flutes இன் பயன்?", options: ["Chip களை வெளியேற்ற", "வெப்பம் குறைக்க", "எடை குறைக்க", "அழகுக்காக"], answer: 0 },
+      { q: "Radial Drilling Machine பயன்படுத்தப்படுவது?", options: ["பெரிய மற்றும் கனமான Work Piece களில் துளையிட", "சிறிய வேலைக்கு மட்டும்", "வெட்ட", "மெருகேற்ற"], answer: 0 },
+      { q: "Drilling Speed அதிகமாக இருந்தால் என்ன நடக்கும்?", options: ["Drill Bit வெப்பமடைந்து தேயும்", "வேலை வேகமாக முடியும், பாதிப்பு இல்லை", "எதுவும் நடக்காது", "Drill Bit குளிர்ச்சியாக இருக்கும்"], answer: 0 },
+      { q: "Drilling Machine இல் Spindle இன் பயன்?", options: ["Drill Bit ஐ சுழற்ற", "Work Piece ஐ பிடிக்க", "எண்ணெய் ஊற்ற", "குளிர்விக்க"], answer: 0 },
+      { q: "Cutting Fluid பயன்படுத்துவதன் நோக்கம்?", options: ["வெப்பத்தை குறைத்து Drill Bit ஆயுளை நீட்டிக்க", "நிறம் மாற்ற", "எடை கூட்ட", "சத்தம் குறைக்க"], answer: 0 },
+      { q: "Sensitive Drilling Machine பயன்படுத்தப்படுவது?", options: ["சிறிய விட்டமுள்ள துளைகளுக்கு", "பெரிய துளைகளுக்கு", "வெட்ட", "மெருகேற்ற"], answer: 0 },
+      { q: "Drill Bit இன் Shank வகைகள்?", options: ["Straight Shank மற்றும் Taper Shank", "Round Shank மட்டும்", "Square Shank மட்டும்", "Flat Shank மட்டும்"], answer: 0 },
+      { q: "Morse Taper Sleeve பயன்படுத்தப்படுவது?", options: ["வெவ்வேறு அளவு Taper Shank Drill களை பொருத்த", "வெட்ட", "அளவிட", "வெப்பமூட்ட"], answer: 0 },
+      { q: "Pillar Drilling Machine இன் சிறப்பு?", options: ["ஒரு தூணின் (Pillar) மேல் அமைந்திருக்கும்", "தரையில் மட்டும்", "சுவரில் மட்டும்", "கையால் மட்டும்"], answer: 0 },
+      { q: "Drill Bit மழுங்கிவிட்டால் என்ன செய்ய வேண்டும்?", options: ["Grinding Machine ல் மீண்டும் கூர்மையாக்க வேண்டும்", "எறிந்துவிட வேண்டும்", "வெப்பமூட்ட வேண்டும்", "எதுவும் தேவை இல்லை"], answer: 0 },
+      { q: "Portable Drilling Machine பயன்படுத்தப்படுவது?", options: ["Work Piece ஐ நகர்த்த முடியாத இடங்களில்", "மட்டும் Workshop இல்", "வெட்ட", "மெருகேற்ற"], answer: 0 },
+      { q: "Drill Bit இன் Web என்பது?", options: ["இரண்டு Flutes க்கு இடையேயான மையப்பகுதி", "Drill Bit இன் முனை", "Shank பகுதி", "Point Angle"], answer: 0 },
+      { q: "Machine Vice பயன்படுத்தப்படுவது?", options: ["Work Piece ஐ Drilling Table மேல் இறுக்கமாக பிடிக்க", "Drill Bit ஐ பிடிக்க", "எண்ணெய் இட", "அளவிட"], answer: 0 },
+      { q: "Deep Hole Drilling இல் ஏற்படும் முக்கிய சிக்கல்?", options: ["Chip வெளியேற்றம் கடினமாக இருக்கும்", "எளிதாக இருக்கும்", "வேகம் அதிகரிக்கும்", "பாதிப்பு இல்லை"], answer: 0 },
+      { q: "Drill Bit இன் Point Angle 118° என்பது எதற்கு பொருத்தமானது?", options: ["பொதுவான Mild Steel Drilling க்கு", "Rubber க்கு மட்டும்", "Wood க்கு மட்டும்", "Plastic க்கு மட்டும்"], answer: 0 },
+      { q: "Drilling Jig பயன்படுத்தப்படுவது?", options: ["ஒரே மாதிரியான துளைகளை பல Work Piece களில் துல்லியமாக செய்ய", "வெட்ட", "மெருகேற்ற", "வெப்பமூட்ட"], answer: 0 },
+      { q: "Tap செய்வதன் நோக்கம்?", options: ["துளையின் உள்ளே Thread உருவாக்க", "துளையை மூட", "வெட்ட", "மெருகேற்ற"], answer: 0 }
+    ]
+  },
+  {
+    name: "5. தகடு வேலை (Sheet Metal)",
+    questions: [
+      { q: "தகடுகளை வெட்ட பயன்படும் கருவி?", options: ["Snips (Tin Snips)", "Hammer", "File", "Punch"], answer: 0 },
+      { q: "Sheet Metal இன் தடிமன் அளக்கப் பயன்படுவது?", options: ["Sheet Metal Gauge", "Steel Rule மட்டும்", "Try Square", "Hammer"], answer: 0 },
+      { q: "Folding செய்யும் வேலைக்கு பயன்படும் கருவி?", options: ["Folding Bar / Bending Machine", "Drill Machine", "Hacksaw", "Lathe"], answer: 0 },
+      { q: "Riveting செய்வதன் நோக்கம்?", options: ["இரண்டு தகடுகளை நிரந்தரமாக இணைக்க", "வெட்ட", "அளவிட", "வளைக்க"], answer: 0 },
+      { q: "Soldering பயன்படுத்தப்படுவது?", options: ["மென்மையான இணைப்புக்கு (Low Temp Joining)", "வெட்ட", "அளவிட", "துளையிட"], answer: 0 },
+      { q: "Sheet Metal வேலையில் Seam என்பது என்ன?", options: ["இரண்டு விளிம்புகளின் இணைப்பு", "ஒரு துளை", "ஒரு கருவி", "ஒரு அளவீடு"], answer: 0 },
+      { q: "Sheet Metal Gauge எண் அதிகமானால் தடிமன் எப்படி இருக்கும்?", options: ["குறைவாக இருக்கும்", "அதிகமாக இருக்கும்", "மாறாது", "0 ஆக இருக்கும்"], answer: 0 },
+      { q: "Bending செய்யும்போது ஏற்படும் Spring Back என்றால் என்ன?", options: ["வளைத்த பிறகு தகடு சிறிது மீண்டும் நேராகும் தன்மை", "தகடு உடைதல்", "தகடு கருகுதல்", "தகடு நீளுதல்"], answer: 0 },
+      { q: "Stake பயன்படுத்தப்படுவது?", options: ["தகடுகளை வளைக்க மற்றும் வடிவமைக்க", "வெட்ட", "அளவிட", "துளையிட"], answer: 0 },
+      { q: "Mallet (மர சுத்தி) பயன்படுத்தப்படுவது?", options: ["தகடுகளை சேதப்படுத்தாமல் அடிக்க/வளைக்க", "இரும்பு வெட்ட", "அளவிட", "துளையிட"], answer: 0 },
+      { q: "Sheet Metal இல் Hem என்பது?", options: ["விளிம்பை மடித்து வலுப்படுத்துதல்", "ஒரு துளை", "ஒரு கோடு", "ஒரு அளவு"], answer: 0 },
+      { q: "Development (Pattern) என்பதன் நோக்கம்?", options: ["3D வடிவத்தை தட்டையான தகடாக விரித்துக் காட்டுதல்", "தகடை வெட்டுதல்", "தகடை மடித்தல்", "தகடை பூசுதல்"], answer: 0 },
+      { q: "Rivet இன் பாகங்கள்?", options: ["Head மற்றும் Shank", "Blade மற்றும் Handle", "Point மற்றும் Shank மட்டும்", "Body மட்டும்"], answer: 0 },
+      { q: "Sheet Metal வெட்ட பயன்படும் இயந்திரம்?", options: ["Guillotine Shearing Machine", "Lathe Machine", "Drilling Machine", "Welding Machine"], answer: 0 },
+      { q: "Beading செய்வதன் நோக்கம்?", options: ["விளிம்பை வலுப்படுத்த வளையமாக மடித்தல்", "வெட்டுதல்", "துளையிடுதல்", "பூசுதல்"], answer: 0 },
+      { q: "Sheet Metal இல் Allowance கொடுப்பது ஏன்?", options: ["Bending மற்றும் Seam க்கு தேவையான கூடுதல் அளவுக்காக", "எடை குறைக்க", "நிறம் மாற்ற", "தேவை இல்லை"], answer: 0 },
+      { q: "Groover Tool பயன்படுத்தப்படுவது?", options: ["Seam களை இறுக்கமாக மூட", "வெட்ட", "அளவிட", "துளையிட"], answer: 0 },
+      { q: "Sheet Metal Bend Allowance கணக்கிட பயன்படும் காரணி?", options: ["தகடின் தடிமன் மற்றும் Bend Radius", "நிறம்", "விலை", "எடை"], answer: 0 },
+      { q: "Wired Edge செய்வதன் நோக்கம்?", options: ["விளிம்பை வலுவாக்க கம்பியை மடித்து சேர்த்தல்", "வெட்டுதல்", "துளையிடுதல்", "நிறம் தீட்டுதல்"], answer: 0 },
+      { q: "Sheet Metal இல் பயன்படும் பொதுவான உலோகங்கள்?", options: ["Mild Steel, Aluminium, Galvanized Iron", "Rubber, Wood", "Plastic மட்டும்", "கண்ணாடி மட்டும்"], answer: 0 },
+      { q: "Punch and Die Set பயன்படுத்தப்படுவது?", options: ["தகடுகளில் துளையிட/வெட்ட", "மெருகேற்ற", "அளவிட", "வெப்பமூட்ட"], answer: 0 },
+      { q: "Lock Seam (Grooved Seam) பயன்படுத்தப்படுவது?", options: ["இரண்டு தகடு விளிம்புகளை இறுக்கமாக இணைக்க", "வெட்ட", "அளவிட", "வெப்பமூட்ட"], answer: 0 },
+      { q: "Sheet Metal Work இல் Blanking என்றால்?", options: ["தேவையான வடிவத்தை தகடிலிருந்து வெட்டி எடுத்தல்", "மடித்தல்", "இணைத்தல்", "மெருகேற்றுதல்"], answer: 0 },
+      { q: "Rivet Head வகைகள்?", options: ["Round Head, Countersunk Head, Flat Head", "Square Head மட்டும்", "Triangle Head மட்டும்", "இல்லை"], answer: 0 },
+      { q: "Sheet Metal தேர்வு செய்யும்போது கவனிக்க வேண்டியது?", options: ["தடிமன், வலிமை, துருப்பிடிக்காமை", "நிறம் மட்டும்", "விலை மட்டும்", "எடை மட்டும்"], answer: 0 }
+    ]
+  },
+  {
+    name: "6. வெல்டிங் (Welding)",
+    questions: [
+      { q: "Arc Welding இல் பயன்படுத்தப்படும் மின்னோட்டம்?", options: ["AC அல்லது DC", "Static Electricity மட்டும்", "மின்சாரம் தேவை இல்லை", "Battery மட்டும்"], answer: 0 },
+      { q: "Welding செய்யும்போது கண்களை பாதுகாக்க பயன்படுவது?", options: ["Welding Shield/Goggles", "Sunglasses", "வெறும் கண்ணாடி", "தேவை இல்லை"], answer: 0 },
+      { q: "Gas Welding இல் பயன்படுத்தப்படும் வாயுக்கள்?", options: ["Oxygen மற்றும் Acetylene", "Nitrogen மற்றும் Hydrogen", "Carbon Dioxide மட்டும்", "காற்று மட்டும்"], answer: 0 },
+      { q: "Welding Electrode இன் வெளிப்புற பூச்சு (Coating) பயன்?", options: ["Flux ஆக செயல்பட்டு Weld ஐ பாதுகாக்க", "நிறத்திற்காக மட்டும்", "எடை கூட்ட", "விலை கூட்ட"], answer: 0 },
+      { q: "Spot Welding பொதுவாக பயன்படுத்தப்படுவது?", options: ["மெல்லிய தகடுகளை இணைக்க", "தடிமனான Rod களை இணைக்க", "மரத்தை இணைக்க", "பிளாஸ்டிக் இணைக்க"], answer: 0 },
+      { q: "Welding Defect ஆக கருதப்படாதது எது?", options: ["Porosity", "Undercut", "Uniform Bead", "Crack"], answer: 2 },
+      { q: "MIG Welding இன் முழு வடிவம்?", options: ["Metal Inert Gas", "Metal Iron Gas", "Metal Internal Gas", "Metal Induced Gas"], answer: 0 },
+      { q: "TIG Welding இல் பயன்படுத்தப்படும் Electrode?", options: ["Tungsten (Non-Consumable)", "Steel (Consumable)", "Copper", "Aluminium"], answer: 0 },
+      { q: "Welding Rod தேர்வு செய்யும்போது கவனிக்க வேண்டியது?", options: ["Base Metal இன் வகை மற்றும் தடிமன்", "நிறம் மட்டும்", "விலை மட்டும்", "எடை மட்டும்"], answer: 0 },
+      { q: "Butt Joint என்பது?", options: ["இரண்டு தகடுகளை ஒரே தளத்தில் இணைத்தல்", "செங்குத்தாக இணைத்தல்", "மேலெழுந்து இணைத்தல்", "வளைத்து இணைத்தல்"], answer: 0 },
+      { q: "Fillet Weld பயன்படுத்தப்படுவது?", options: ["T-Joint அல்லது Lap Joint களில்", "Butt Joint க்கு மட்டும்", "வெட்ட", "அளவிட"], answer: 0 },
+      { q: "Welding Slag என்றால் என்ன?", options: ["Weld செய்தபின் மேற்பரப்பில் உருவாகும் கழிவு பொருள்", "Weld Rod", "Base Metal", "Gas"], answer: 0 },
+      { q: "Arc Welding இல் Polarity என்பது?", options: ["மின்னோட்டத்தின் திசை (Positive/Negative) அமைப்பு", "வெப்பநிலை", "எடை", "நேரம்"], answer: 0 },
+      { q: "Welding செய்யும்போது Undercut Defect ஏற்படுவது ஏன்?", options: ["அதிக Current அல்லது தவறான Angle", "குறைந்த Current", "சரியான வேகம்", "சரியான Angle"], answer: 0 },
+      { q: "Spatter என்றால் என்ன?", options: ["Welding செய்யும்போது தெறிக்கும் உலோகத் துகள்கள்", "Weld Bead", "Slag", "Flux"], answer: 0 },
+      { q: "Welding Transformer இன் பயன்?", options: ["AC Current ஐ Welding க்கு தேவையான அளவுக்கு மாற்ற", "Gas உற்பத்தி செய்ய", "வெப்பநிலை அளக்க", "எடை அளக்க"], answer: 0 },
+      { q: "Oxy-Acetylene Flame வகைகள்?", options: ["Neutral, Oxidizing, Carburizing", "Hot, Cold, Warm", "Red, Blue, Green", "High, Low, Medium"], answer: 0 },
+      { q: "Welding Helmet/Shield அணிவது ஏன்?", options: ["கண்களை UV/IR கதிர்களில் இருந்து காக்க", "அழகுக்காக", "எடை குறைக்க", "சத்தம் குறைக்க"], answer: 0 },
+      { q: "Brazing என்பது?", options: ["உலோகங்களை உருக்காமல் Filler Metal மூலம் இணைத்தல்", "உலோகங்களை உருக்கி இணைத்தல்", "வெட்டுதல்", "மெருகேற்றுதல்"], answer: 0 },
+      { q: "Welding Current அளவை நிர்ணயிக்கும் காரணி?", options: ["Electrode இன் விட்டம் மற்றும் Base Metal தடிமன்", "நிறம்", "விலை", "நேரம் மட்டும்"], answer: 0 },
+      { q: "Lap Joint என்பது?", options: ["இரண்டு தகடுகளை ஒன்றன் மேல் ஒன்று வைத்து இணைத்தல்", "ஒரே தளத்தில் இணைத்தல்", "செங்குத்தாக இணைத்தல்", "கோண இணைப்பு"], answer: 0 },
+      { q: "Welding Defect ஆன Porosity ஏற்படுவது ஏன்?", options: ["Weld Pool இல் சிக்கிய வாயு குமிழிகள்", "அதிக வெப்பம்", "குறைந்த வெப்பம்", "சரியான Technique"], answer: 0 },
+      { q: "Electric Arc Welding இல் Arc Length அதிகமானால் என்ன ஏற்படும்?", options: ["Spatter மற்றும் Porosity அதிகரிக்கும்", "Weld தரம் மேம்படும்", "பாதிப்பு இல்லை", "வேகம் அதிகரிக்கும்"], answer: 0 },
+      { q: "Welding Fixture பயன்படுத்தப்படுவது?", options: ["Work Piece களை சரியான நிலையில் பிடித்து வைக்க", "வெட்ட", "அளவிட", "மெருகேற்ற"], answer: 0 },
+      { q: "Resistance Welding இல் வெப்பம் உருவாவது எப்படி?", options: ["மின்தடையால் (Electrical Resistance)", "Gas Flame ஆல்", "உராய்வால் மட்டும்", "வெளிப்புற வெப்பத்தால்"], answer: 0 }
+    ]
+  },
+  {
+    name: "7. லேத் இயந்திரம் (Lathe Machine)",
+    questions: [
+      { q: "Lathe Machine இன் முக்கிய பயன்?", options: ["உருளை வடிவ பொருட்களை Turning செய்ய", "துளையிட மட்டும்", "தகடு வெட்ட", "வெல்டிங் செய்ய"], answer: 0 },
+      { q: "Lathe இல் பொருளை பிடிக்க பயன்படும் பாகம்?", options: ["Chuck", "Tailstock", "Bed", "Carriage"], answer: 0 },
+      { q: "Facing Operation இன் நோக்கம்?", options: ["பொருளின் முனையை சமமாக்க", "துளையிட", "நூல் வெட்ட", "வளைக்க"], answer: 0 },
+      { q: "Lathe Bed தயாரிக்கப்படும் பொருள்?", options: ["Cast Iron", "Rubber", "Wood", "Plastic"], answer: 0 },
+      { q: "Thread Cutting செய்ய பயன்படும் பாகம்?", options: ["Lead Screw", "Tailstock மட்டும்", "Chuck மட்டும்", "Bed மட்டும்"], answer: 0 },
+      { q: "Tailstock இன் பயன்?", options: ["நீண்ட பொருட்களுக்கு ஆதரவு அளிக்க", "வேகத்தை கட்டுப்படுத்த", "நிறம் தீட்ட", "எடை அளக்க"], answer: 0 },
+      { q: "Lathe இல் Headstock இன் பயன்?", options: ["Spindle ஐ சுழற்றி வேகத்தை கட்டுப்படுத்த", "Work Piece க்கு ஆதரவு அளிக்க மட்டும்", "Tool ஐ பிடிக்க", "நீளம் அளக்க"], answer: 0 },
+      { q: "Turning Operation இன் நோக்கம்?", options: ["Work Piece இன் வெளி விட்டத்தை குறைக்க", "துளையிட", "வெட்ட", "மெருகேற்ற"], answer: 0 },
+      { q: "Carriage இல் அடங்கியிருக்கும் முக்கிய பாகம்?", options: ["Cross Slide மற்றும் Tool Post", "Chuck மட்டும்", "Tailstock மட்டும்", "Motor மட்டும்"], answer: 0 },
+      { q: "Knurling Operation இன் நோக்கம்?", options: ["மேற்பரப்பில் பிடிப்பதற்கு வடிவங்களை உருவாக்க", "வெட்ட", "துளையிட", "அளவிட"], answer: 0 },
+      { q: "Taper Turning செய்யும் முறைகள்?", options: ["Compound Slide Method, Tailstock Offset Method", "Knurling Method மட்டும்", "Facing Method மட்டும்", "Drilling Method மட்டும்"], answer: 0 },
+      { q: "Lathe Machine இல் Feed என்பது?", options: ["Tool ஒரு சுழற்சியில் நகரும் தூரம்", "Spindle வேகம்", "Work Piece நீளம்", "Chuck அளவு"], answer: 0 },
+      { q: "Three Jaw Chuck பயன்படுத்தப்படுவது?", options: ["வட்ட வடிவ Work Piece களை பிடிக்க", "சதுர Work Piece களுக்கு மட்டும்", "தகடு வெட்ட", "துளையிட"], answer: 0 },
+      { q: "Four Jaw Chuck இன் சிறப்பு?", options: ["ஒழுங்கற்ற வடிவ Work Piece களையும் பிடிக்கலாம்", "வட்ட வடிவத்திற்கு மட்டும்", "வெட்ட மட்டும்", "அளவிட மட்டும்"], answer: 0 },
+      { q: "Lathe இல் Boring Operation இன் நோக்கம்?", options: ["ஏற்கனவே உள்ள துளையின் விட்டத்தை பெரிதாக்க", "புதிய துளை செய்ய", "வெட்ட", "மெருகேற்ற"], answer: 0 },
+      { q: "Cutting Speed என்பது?", options: ["Work Piece இன் மேற்பரப்பு நிமிடத்திற்கு நகரும் தூரம்", "Spindle சுழற்சி எண்ணிக்கை மட்டும்", "Feed Rate", "Tool இன் எடை"], answer: 0 },
+      { q: "Lathe Tool Post இன் பயன்?", options: ["Cutting Tool ஐ பிடித்து வைக்க", "Work Piece ஐ பிடிக்க", "வேகத்தை மாற்ற", "எண்ணெய் இட"], answer: 0 },
+      { q: "Center Drill பயன்படுத்தப்படுவது?", options: ["Work Piece இல் Center Hole உருவாக்க Tailstock ஆதரவுக்காக", "பெரிய துளை செய்ய", "வெட்ட", "மெருகேற்ற"], answer: 0 },
+      { q: "Parting Off Operation என்பது?", options: ["Work Piece ஐ இரண்டாக பிரிக்கும் வேலை", "மெருகேற்றுதல்", "துளையிடுதல்", "வளைத்தல்"], answer: 0 },
+      { q: "Lathe Machine இன் அளவு எதைக்கொண்டு குறிப்பிடப்படுகிறது?", options: ["Centers க்கிடையேயான தூரம் மற்றும் Swing", "எடை மட்டும்", "நிறம்", "விலை"], answer: 0 },
+      { q: "Live Center மற்றும் Dead Center இடையேயான வேறுபாடு?", options: ["Live Center சுழலும், Dead Center சுழலாது", "இரண்டும் ஒன்றே", "Dead Center மட்டும் சுழலும்", "வேறுபாடு இல்லை"], answer: 0 },
+      { q: "Lathe இல் Apron இன் பயன்?", options: ["Carriage இன் இயக்கத்தை கட்டுப்படுத்தும் Gears அடங்கியது", "Work Piece பிடிக்க", "Tool பிடிக்க", "வேகம் அளக்க"], answer: 0 },
+      { q: "Lead Screw பயன்படுத்தப்படுவது?", options: ["Thread Cutting மற்றும் Automatic Feed க்கு", "Work Piece பிடிக்க", "Tool கூர்மையாக்க", "வேகம் அளக்க"], answer: 0 },
+      { q: "Coolant பயன்படுத்துவதன் நோக்கம் Lathe இல்?", options: ["வெப்பத்தை குறைத்து Tool ஆயுளை நீட்டிக்க", "நிறம் மாற்ற", "எடை கூட்ட", "சத்தம் அதிகரிக்க"], answer: 0 },
+      { q: "Facing Tool இன் Cutting Edge கோணம் பொதுவாக?", options: ["Work Piece முனைக்கு செங்குத்தாக அமையும்", "45° மட்டும்", "90° இயலாது", "0°"], answer: 0 }
+    ]
+  },
+  {
+    name: "8. பராமரிப்பு (Maintenance)",
+    questions: [
+      { q: "Preventive Maintenance என்றால் என்ன?", options: ["பழுது ஏற்படுவதற்கு முன் தடுப்பு பராமரிப்பு", "பழுதான பிறகு மட்டும் பழுது பார்க்க", "இயந்திரத்தை மாற்ற", "இயந்திரத்தை விற்க"], answer: 0 },
+      { q: "Lubrication (எண்ணெய் இடுதல்) செய்வதன் நோக்கம்?", options: ["Friction ஐ குறைக்க", "எடை கூட்ட", "நிறம் மாற்ற", "வேகத்தை குறைக்க"], answer: 0 },
+      { q: "Breakdown Maintenance என்பது?", options: ["இயந்திரம் பழுதானபின் செய்யும் பராமரிப்பு", "முன்கூட்டியே செய்யும் பராமரிப்பு", "தினசரி சுத்தம்", "புதிய இயந்திரம் வாங்குதல்"], answer: 0 },
+      { q: "Corrosion (துரு) ஏற்படுவதற்கு முக்கிய காரணம்?", options: ["ஈரப்பதம் மற்றும் காற்று", "வெப்பம் மட்டும்", "எண்ணெய்", "வண்ணம்"], answer: 0 },
+      { q: "Bearing இல் ஏற்படும் பொதுவான பழுது?", options: ["Wear and Tear", "Colour Change", "Weight Increase", "Size Increase"], answer: 0 },
+      { q: "Maintenance Schedule தயாரிப்பதன் பயன்?", options: ["திட்டமிட்ட பராமரிப்பை உறுதி செய்ய", "செலவு கூட்ட", "நேரத்தை வீணாக்க", "தேவை இல்லை"], answer: 0 },
+      { q: "Predictive Maintenance என்றால் என்ன?", options: ["இயந்திரத்தின் நிலையை கண்காணித்து முன்கூட்டியே பழுதை கணிக்கும் முறை", "பழுதான பின் மட்டும் பராமரிப்பு", "எந்த திட்டமும் இல்லாத பராமரிப்பு", "புதிய இயந்திரம் வாங்குவது"], answer: 0 },
+      { q: "Lubricant தேர்வு செய்யும்போது கவனிக்க வேண்டியது?", options: ["இயந்திரத்தின் வேகம், சுமை, வெப்பநிலை", "நிறம் மட்டும்", "விலை மட்டும்", "வாசனை மட்டும்"], answer: 0 },
+      { q: "Grease மற்றும் Oil இடையேயான வேறுபாடு?", options: ["Grease அரை-திண்மம், Oil திரவம்", "இரண்டும் ஒன்றே", "Grease திரவம்", "Oil திண்மம்"], answer: 0 },
+      { q: "Bearing இல் Lubrication இல்லாமல் இயக்கினால் என்ன ஏற்படும்?", options: ["அதிக Friction மற்றும் Wear ஏற்படும்", "பாதிப்பு இல்லை", "வேகம் அதிகரிக்கும்", "எடை குறையும்"], answer: 0 },
+      { q: "Machine Overhauling என்றால் என்ன?", options: ["இயந்திரத்தை முழுமையாக பிரித்து பரிசோதித்து சரி செய்தல்", "தினசரி சுத்தம் செய்தல்", "எண்ணெய் இடுதல் மட்டும்", "வண்ணம் தீட்டுதல்"], answer: 0 },
+      { q: "Condition Monitoring இல் பயன்படுத்தப்படும் முறை?", options: ["Vibration Analysis, Temperature Check", "நிறம் பார்த்தல் மட்டும்", "எடை பார்த்தல்", "விலை பார்த்தல்"], answer: 0 },
+      { q: "Alignment (சீரமைப்பு) சரியில்லாத இயந்திரத்தில் ஏற்படும் பிரச்சனை?", options: ["அதிக Vibration மற்றும் Wear", "பாதிப்பு இல்லை", "வேகம் அதிகரிக்கும்", "செலவு குறையும்"], answer: 0 },
+      { q: "Preventive Maintenance Schedule இல் அடங்குவது?", options: ["Cleaning, Lubrication, Inspection", "விற்பனை மட்டும்", "பயிற்சி மட்டும்", "வடிவமைப்பு மட்டும்"], answer: 0 },
+      { q: "Rust Prevention முறைகள்?", options: ["Painting, Greasing, Oiling", "எதுவும் செய்யாமல் இருப்பது", "நீரில் ஊற வைப்பது", "வெயிலில் வைப்பது"], answer: 0 },
+      { q: "Machine Downtime என்றால் என்ன?", options: ["இயந்திரம் வேலை செய்யாத நேரம்", "இயந்திரம் இயங்கும் நேரம்", "பராமரிப்பு நேரம் மட்டும்", "ஓய்வு நேரம் மட்டும்"], answer: 0 },
+      { q: "Spare Parts Inventory வைத்திருப்பதன் நோக்கம்?", options: ["பழுது ஏற்படும்போது உடனடியாக மாற்ற", "இடத்தை நிரப்ப", "அலங்காரத்திற்கு", "தேவை இல்லை"], answer: 0 },
+      { q: "Wear and Tear ஏற்படுவதற்கு முக்கிய காரணம்?", options: ["தொடர்ந்த பயன்பாடு மற்றும் Friction", "புதிய இயந்திரம்", "பயன்படுத்தாமை", "வண்ணம்"], answer: 0 },
+      { q: "Total Productive Maintenance (TPM) இன் நோக்கம்?", options: ["எல்லா ஊழியர்களும் பங்கேற்று இயந்திர திறனை அதிகரித்தல்", "செலவு கூட்டுதல்", "வேலையை நிறுத்துதல்", "இயந்திரத்தை மாற்றுதல்"], answer: 0 },
+      { q: "Machine Log Book பராமரிக்கும் நோக்கம்?", options: ["பராமரிப்பு வரலாற்றை பதிவு செய்ய", "அலங்காரத்திற்கு", "விற்பனைக்கு", "தேவை இல்லை"], answer: 0 },
+      { q: "Filter Cleaning/Changing செய்வது ஏன் முக்கியம்?", options: ["அசுத்தங்கள் இயந்திரத்திற்குள் செல்லாமல் தடுக்க", "நிறம் மாற்ற", "எடை குறைக்க", "வேகம் குறைக்க"], answer: 0 },
+      { q: "Belt Drive பராமரிப்பில் கவனிக்க வேண்டியது?", options: ["Tension மற்றும் Alignment சரிபார்த்தல்", "நிறம் பார்த்தல்", "விலை பார்த்தல்", "எடை பார்த்தல்"], answer: 0 },
+      { q: "Machine Breakdown ஏற்பட்டால் முதலில் செய்ய வேண்டியது?", options: ["இயந்திரத்தை உடனே நிறுத்தி பாதுகாப்பாக ஆய்வு செய்தல்", "தொடர்ந்து இயக்குதல்", "புறக்கணித்தல்", "வேகமாக்குதல்"], answer: 0 },
+      { q: "Reliability Centered Maintenance (RCM) கவனம் செலுத்துவது?", options: ["இயந்திரத்தின் Function மற்றும் Failure Mode களை பகுப்பாய்வு செய்தல்", "விலை குறைப்பு மட்டும்", "நிறம் தேர்வு", "எடை குறைப்பு"], answer: 0 },
+      { q: "Safety Precautions Maintenance வேலையின்போது எடுக்க வேண்டியது?", options: ["இயந்திரத்தை Switch Off செய்து Lock Out/Tag Out செய்தல்", "இயங்கும் நிலையிலேயே பழுது பார்த்தல்", "எச்சரிக்கை தேவை இல்லை", "வேகமாக செய்தல்"], answer: 0 }
+    ]
+  }
+];
+
+let currentChapter = 0;
+let current = 0;
+let score = 0;
+let timer;
+let timeLeft = 20;
+let answered = false;
+const chapterScores = {};
+
+function renderHome() {
+  document.getElementById('homeScreen').classList.remove('hidden');
+  document.getElementById('quizScreen').classList.add('hidden');
+  document.getElementById('resultScreen').classList.add('hidden');
+
+  const list = document.getElementById('chapterList');
+  list.innerHTML = '';
+  chapters.forEach((ch, idx) => {
+    const div = document.createElement('div');
+    div.className = 'chapter-btn';
+    const best = chapterScores[idx];
+    div.innerHTML = `
+      <div>
+        <div class="chapter-name">${ch.name}</div>
+        <div class="chapter-count">${ch.questions.length} கேள்விகள்</div>
+      </div>
+      <div class="chapter-score">${best !== undefined ? '✔ ' + best + '/' + ch.questions.length : '▶'}</div>
+    `;
+    div.onclick = () => startChapter(idx);
+    list.appendChild(div);
+  });
+}
+
+function startChapter(idx) {
+  currentChapter = idx;
+  current = 0;
+  score = 0;
+  document.getElementById('homeScreen').classList.add('hidden');
+  document.getElementById('resultScreen').classList.add('hidden');
+  document.getElementById('quizScreen').classList.remove('hidden');
+  loadQuestion();
+}
+
+function loadQuestion() {
+  answered = false;
+  timeLeft = 20;
+  const chapter = chapters[currentChapter];
+  const q = chapter.questions[current];
+  document.getElementById('qCounter').textContent = `கேள்வி ${current + 1}/${chapter.questions.length}`;
+  document.getElementById('progressFill').style.width = `${(current / chapter.questions.length) * 100}%`;
+  document.getElementById('questionText').textContent = q.q;
+  document.getElementById('feedback').textContent = '';
+  document.getElementById('timer').textContent = `⏱ ${timeLeft}`;
+
+  const container = document.getElementById('optionsContainer');
+  container.innerHTML = '';
+  q.options.forEach((opt, idx) => {
+    const div = document.createElement('div');
+    div.className = 'option';
+    div.textContent = opt;
+    div.onclick = () => selectAnswer(idx);
+    container.appendChild(div);
+  });
+
+  clearInterval(timer);
+  timer = setInterval(() => {
+    timeLeft--;
+    document.getElementById('timer').textContent = `⏱ ${timeLeft}`;
+    if (timeLeft <= 0) {
+      clearInterval(timer);
+      selectAnswer(-1);
+    }
+  }, 1000);
+}
+
+function selectAnswer(idx) {
+  if (answered) return;
+  answered = true;
+  clearInterval(timer);
+
+  const chapter = chapters[currentChapter];
+  const q = chapter.questions[current];
+  const options = document.querySelectorAll('.option');
+  options.forEach(o => o.classList.add('disabled'));
+
+  if (idx === q.answer) {
+    options[idx].classList.add('correct');
+    score++;
+    document.getElementById('feedback').textContent = '✅ சரியான பதில்!';
+    document.getElementById('feedback').style.color = '#2ecc71';
+  } else {
+    if (idx >= 0) options[idx].classList.add('wrong');
+    options[q.answer].classList.add('correct');
+    document.getElementById('feedback').textContent = idx === -1 ? "⏰ நேரம் முடிந்தது!" : '❌ தவறான பதில்!';
+    document.getElementById('feedback').style.color = '#e63946';
+  }
+
+  setTimeout(() => {
+    current++;
+    if (current < chapter.questions.length) {
+      loadQuestion();
+    } else {
+      showResult();
+    }
+  }, 1200);
+}
+
+function showResult() {
+  document.getElementById('quizScreen').classList.add('hidden');
+  document.getElementById('resultScreen').classList.remove('hidden');
+  document.getElementById('progressFill').style.width = '100%';
+
+  const chapter = chapters[currentChapter];
+  chapterScores[currentChapter] = score;
+
+  const pct = score / chapter.questions.length;
+  let emoji = '🎉', msg = 'அருமையான முயற்சி!';
+  if (pct < 0.4) { emoji = '😅'; msg = 'இன்னும் பயிற்சி செய்யுங்கள்!'; }
+  else if (pct < 0.7) { emoji = '👍'; msg = 'நல்ல முயற்சி!'; }
+  else if (pct < 1) { emoji = '🔥'; msg = 'சூப்பர், கிட்டத்தட்ட முழுமை!'; }
+  else { emoji = '🏆'; msg = 'முழு மதிப்பெண்! அருமை!'; }
+
+  document.getElementById('resultEmoji').textContent = emoji;
+  document.getElementById('resultScore').textContent = `${score} / ${chapter.questions.length}`;
+  document.getElementById('resultMsg').textContent = msg;
+}
+
+function restartChapter() {
+  startChapter(currentChapter);
+}
+
+function goHome() {
+  clearInterval(timer);
+  renderHome();
+}
+
+renderHome();
+</script>
+</body>
+</html>
