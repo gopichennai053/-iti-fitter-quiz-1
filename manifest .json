@@ -1,0 +1,13 @@
+{
+  "background_color": "#ffffff",
+  "dir": "ltr",
+  "display": "standalone",
+  "name": "ITI Fitter Quiz",
+  "orientation": "any",
+  "scope": "/",
+  "short_name": "Fitter Quiz",
+  "start_url": "/",
+  "theme_color": "#ffffff",
+  "description": "ITI Fitter Trade Chapter-wise Quiz App",
+  "lang": "ta"
+}
